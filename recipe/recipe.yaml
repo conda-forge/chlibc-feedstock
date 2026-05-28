@@ -9,7 +9,7 @@ context:
 
 package:
   name: "chlibc"
-  version: ${{ dev_version if is_dev else release_version }}
+  version: ${{ release_version }}
 
 source:
   - if: is_dev
