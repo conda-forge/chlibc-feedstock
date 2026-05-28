@@ -2,29 +2,38 @@
 schema_version: 1
 
 context:
-  version: "0.1.5"
+  release_version: "0.1.6"
+  release_hash: "ed86a942ee86ba26ec33e8e0cc4dd4f7563674d9df7ce632651425499c7a0d93"
+  is_dev: ${{ env.exists('_CONDA_BUILD_LOCAL') }}
 
 package:
   name: "chlibc"
-  version: ${{ version }}
+  version: ${{ env.get('PIXI_PROJECT_VERSION') if env.exists('_CONDA_BUILD_LOCAL') else release_version }}
 
 source:
-  url: https://github.com/gzm55/chlibc/archive/refs/tags/v${{ version }}.tar.gz
-  sha256: 2b842c05585d0a0fa9713f7f171e224306e48cc80558bf73b7ef769d252a5c38
+  - if: is_dev
+    then:
+      path: ..
+  - if: not is_dev
+    then:
+      # use the source archive with checksum.txt
+      url: https://github.com/gzm55/chlibc/releases/download/v${{ release_version }}/source.tar.gz
+      sha256: ${{ release_hash }}
 
 build:
-  skip:
-    - target_platform not in ["linux-64", "linux-aarch64"]
+  skip: ${{ target_platform not in ["linux-64", "linux-aarch64", "linux-ppc64le"] }}
   number: 0
   dynamic_linking:
     binary_relocation: false
     rpath_allowlist: []
   script:
     content: |
+      {% if target_platform in ["linux-64", "linux-aarch64"] %}
       unset CFLAGS
       unset LDFLAGS
-      unset LD_RUN_PATH
+      {% endif %}
 
+      unset LD_RUN_PATH
       env
 
       cmake --fresh --preset conda-build ${CMAKE_ARGS} -U CMAKE_LINKER -U CMAKE_STRIP
@@ -39,19 +48,22 @@ requirements:
     - cmake >=4.2
     - ninja
 
-    - compiler-rt_${{ target_platform }}
-    - lld
-    - llvm-tools
-
-    - clang-tools
+    - if: target_platform in ["linux-64", "linux-aarch64"]
+      then: compiler-rt_${{ target_platform }}
+    - if: target_platform in ["linux-64", "linux-aarch64"]
+      then: lld
+    - if: target_platform in ["linux-64", "linux-aarch64"]
+      then: llvm-tools
+    - if: target_platform in ["linux-64", "linux-aarch64"]
+      then: clang-tools
   host:
   run:
     - __glibc
 
   ignore_run_exports:
     from_package:
-      - ${{ compiler('c') }} # do not depend on libgcc
-      - ${{ stdlib('c') }} # do not introduce __glibc version limit
+      - ${{ compiler('c') }}  # do not depend on libgcc
+      - ${{ stdlib('c') }}  # do not introduce __glibc version limit
 
 tests:
   - script:
@@ -63,6 +75,25 @@ tests:
       build:
         - file
         - coreutils
+        - zstd
+
+  - if: not is_dev
+    then:
+      script:
+        - echo Verifying the binary checksum
+        - |
+          case ${{ target_platform }} in
+            linux-64)      NATIVE_ARCH="x86_64" ;;
+            linux-aarch64) NATIVE_ARCH="aarch64" ;;
+            linux-ppc64le) NATIVE_ARCH="ppc64le" ;;
+            *)             NATIVE_ARCH="unknown" ;;
+          esac
+        - EXPECTED_HASH=$(grep "chlibc-$NATIVE_ARCH" checksum.txt | awk '{print $1}')
+        - echo "Expected hash $EXPECTED_HASH"
+        - echo "$EXPECTED_HASH  $PREFIX/bin/chlibc" | sha256sum -c
+      files:
+        source:
+          - checksum.txt
 
 about:
   summary: 'A userspace transparent ld-linux interpreter and glibc swapper.'

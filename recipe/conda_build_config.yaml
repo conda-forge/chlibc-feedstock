@@ -1,8 +1,11 @@
+---
 c_compiler:
-  - clang
+  - clang  # [x86_64 or aarch64]
+  - gcc  # [ppc64le]
 c_compiler_version:
-  - ">=18"
-c_stdlib_version:
-- 2.17
+  - ">=18"  # [x86_64 or aarch64]
+  - ">=14"  # [ppc64le]
 c_stdlib:
-- sysroot
+  - sysroot
+c_stdlib_version:
+  - 2.17
