@@ -8,3 +8,6 @@ c_compiler_version:
   - ">=14"  # [ppc64le or riscv64]
 c_stdlib:
   - sysroot
+c_stdlib_version:
+  - "<2.34"   # [not riscv64]
+  - ">=2.34"  # [riscv64]
