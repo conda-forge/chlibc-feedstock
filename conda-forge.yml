@@ -6,9 +6,15 @@ conda_build:
   error_overlinking: true
 conda_forge_output_validation: true
 
+os_version:
+  # necessary due to glibc constraints for cross-compiling riscv
+  # https://github.com/conda-forge/conda-forge-ci-setup-feedstock/issues/419
+  linux_64: alma10
+
 build_platform:
   linux_aarch64: linux_64
   linux_ppc64le: linux_64
+  linux_riscv64: linux_64
 
 provider:
   linux: github_actions
