@@ -96,12 +96,6 @@ jobs:
         export MINIFORGE_HOME="${MINIFORGE_HOME/#~/${HOME}}"
         export CONDA_BLD_PATH="${CONDA_BLD_PATH/#~/${HOME}}"
         echo "::endgroup::"
-
-        if [[ "${CONFIG}" == "linux_riscv64_" ]]; then
-          : hotfix for issue 419
-          sed -i '/GLIBC_VERSION=.*DOCKER_GLIBC_VERSION/a GLIBC_VERSION=2.39' /opt/conda/bin/cross_compile_support.sh
-        fi
-
         ./.scripts/run_docker_build.sh
 
     - name: Build on macOS

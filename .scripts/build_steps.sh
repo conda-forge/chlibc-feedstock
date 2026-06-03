@@ -42,6 +42,11 @@ export CONDA_LIBMAMBA_SOLVER_NO_CHANNELS_FROM_INSTALLED=1
 # set up the condarc
 setup_conda_rc "${FEEDSTOCK_ROOT}" "${RECIPE_ROOT}" "${CONFIG_FILE}"
 
+if [[ "${CONFIG}" == "linux_riscv64_" ]]; then
+  : hotfix for issue 419
+  sed -i '/GLIBC_VERSION=.*DOCKER_GLIBC_VERSION/a GLIBC_VERSION=2.39' /opt/conda/bin/cross_compile_support.sh
+fi
+
 source run_conda_forge_build_setup
 
 
